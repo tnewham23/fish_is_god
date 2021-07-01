@@ -1,7 +1,7 @@
 # SIG x FinTechSoc Algothon 2021
 Contains example submission file, testing program and relevant price data for the Algothon.
 
-Good luck!
+**Good luck!**
 
 # Case Brief
 *Note, this information will also be available on our Information Hub, located [here](https://www.notion.so/Algothon-2021-Information-Hub-3b65973a4a694d07952ff55706a6b1aa).*
@@ -43,7 +43,10 @@ Algorithms must be contained in a file titled *[teamName].py.*
 
 - A commission rate of 50 bps (0.0050) can be assumed, meaning you will be charged commission equating 0.0050 * *totalDollarVolumeTraded*. This will be deducted from your PL.
 - Positions can be long or short (i.e. the integer positions can be either positive or negative).
-- Teams are limited to a $10k position limit per stock, positive or negative.
+- Teams are limited to a $10k position limit per stock, positive or negative. The $10k limit cannot be breached at the time of the trade.
+    - This position limit may technically be exceeded in the case that exactly $10k worth of a stock is bought, and stock goes up the next day - this is fine.
+    - However, given this occurs, the position must be slightly reduced to be no greater than $10k by the new day's price.
+    - Note: *eval.py* contains a function to clip positions to a maximum of $10k. This means that if the price is $10 and the algorithm returns a position of 1500 shares, *eval.py* will assume a request of 1000 shares.
 
 ### **Assessment Benchmarks**
 
