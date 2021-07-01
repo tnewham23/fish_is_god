@@ -4,13 +4,17 @@ import numpy as np
 import pandas as pd
 from teamName import getMyPosition as getPosition
 
+# Algorithm testing file. 
+# Quantitative judging will be determined from output of this program.
+# Judging will use unseeen, future price data from the same universe.
+
 nInst = 0
 nt = 0
 
-# Commission rate
+# Commission rate.
 commRate = 0.0050
 
-# Dollar position limit (maximum absolute dollar value of any individual stock position)
+# Dollar position limit (maximum absolute dollar value of any individual stock position).
 dlrPosLimit = 10000
 
 def loadPrices(fn):
@@ -22,8 +26,6 @@ def loadPrices(fn):
 pricesFile="./prices250.txt"
 prcAll = loadPrices(pricesFile)
 print ("Loaded %d instruments for %d days" % (nInst, nt))
-
-#currentPos = np.zeros(nInst)
 
 def calcPL(prcHist):
     cash = 0
@@ -39,7 +41,7 @@ def calcPL(prcHist):
     for t in range(201,251):
         prcHistSoFar = prcHist[:,:t]
         newPosOrig = getPosition(prcHistSoFar)
-        curPrices = prcHistSoFar[:,-1] #prcHist[:,t-1]
+        curPrices = prcHistSoFar[:,-1] 
         posLimits = np.array([int(x) for x in dlrPosLimit / curPrices])
         newPos = np.array([int(p) for p in np.clip(newPosOrig, -posLimits, posLimits)])
         deltaPos = newPos - curPos
@@ -70,8 +72,7 @@ def calcPL(prcHist):
         annSharpe = 16 * plmu / plstd
     return (plmu, ret, annSharpe, totDVolume)
 
-
-
+# Output.
 (meanpl, ret, sharpe, dvol) = calcPL(prcAll)
 print ("=====")
 print ("mean(PL): %.0lf" % meanpl)
