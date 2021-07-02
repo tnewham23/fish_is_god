@@ -4,7 +4,7 @@ Contains evaluation program, relevant price data and an example algorithm/submis
 **Good luck!**
 
 # Case Brief
-*Note, this information will also be available on our Information Hub, located [here](https://www.notion.so/Algothon-2021-Information-Hub-3b65973a4a694d07952ff55706a6b1aa).*
+*Find this case brief as well as more information about our Algothon on our Information Hub, located [here](https://www.notion.so/Algothon-2021-Information-Hub-3b65973a4a694d07952ff55706a6b1aa).*
 
 ## Task
 
@@ -40,6 +40,8 @@ Algorithms must be contained in a file titled *[teamName].py.*
 - This file must contain a function *getMyPosition().*
 - *getMyPosition()* must take in the daily price data, and output a vector of integer positions - the numbers of shares desired for each stock as the total final position after the last day.
 - *getMyPosition()* must be in the global scope of the file called *[teamName].py* and have the appropriate signature.
+    - When *getMyPosition()* is called, we will trade position differences from the previous posision **at the most recent price, buying or selling.** 
+    - Consider the case where your last position was +30, and the new stock price is $20. If your new position is +100, *eval* will register this as buying 70 **extra** shares at $20 a share. If your new position is -200, *eval* will sell 230 shares also at $20 a share.
 
 ### **Considerations**
 
@@ -49,6 +51,7 @@ Algorithms must be contained in a file titled *[teamName].py.*
     - This position limit may technically be exceeded in the case that exactly $10k worth of a stock is bought, and stock goes up the next day - this is fine.
     - However, given this occurs, the position must be slightly reduced to be no greater than $10k by the new day's price.
     - Note: *eval.py* contains a function to clip positions to a maximum of $10k. This means that if the price is $10 and the algorithm returns a position of 1500 shares, *eval.py* will assume a request of 1000 shares.
+- Buying and selling is always done at the same price, and liquidity is unlimited (except by the $10k position limit).
 
 ### **Assessment Benchmarks**
 
