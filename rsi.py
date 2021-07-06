@@ -12,9 +12,13 @@ def sum(ls):
 
 
 # Returns RSI of one instrument. Takes instrument price history and time as inputs
-def ins_rsi(ins_ls, time):
+def ins_rsi(ins_ls, time = 14):
     up = []
     down = []
+    if len(ins_ls) < 15:
+        time = len(ins_ls) - 1
+        if time == 0:
+            return 50
     for i in range(time, 0, -1):
         price_before = float(ins_ls[-i - 1])
         price_today = float(ins_ls[-i])
@@ -60,25 +64,26 @@ def loadPrices(fn):
     nt, nInst = df.values.shape
     return (df.values).T
 
-pricesFile="./prices250.txt"
-prcAll = loadPrices(pricesFile)
-print ("Loaded %d instruments for %d days" % (nInst, nt))
+if __name__ == '__main__':
+    nInst, nt = 0, 0
+    prcAll = loadPrices("prices250.txt")
 
-x = []
-for t in range(0,100):
-    x.append([])
 
-a = []
+    x = []
+    for t in range(0,100):
+        x.append([])
 
-for t in range(50,251):
-    prcHistSoFar = prcAll[:,:t]
+    a = []
 
-    rsi_t = rsi(prcHistSoFar)
-    a.append(rsi_t[1])
+    for t in range(50,251):
+        prcHistSoFar = prcAll[:,:t]
 
-print(a)
+        rsi_t = rsi(prcHistSoFar)
+        a.append(rsi_t[1])
 
-plt.plot(a)
-plt.axhline(y=30, color = 'r', linestyle = '-')
-plt.axhline(y=70, color = 'r', linestyle = '-')
-plt.show()
+    print(a)
+
+    plt.plot(a)
+    plt.axhline(y=30, color = 'r', linestyle = '-')
+    plt.axhline(y=70, color = 'r', linestyle = '-')
+    plt.show()
