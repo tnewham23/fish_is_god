@@ -24,9 +24,9 @@ def ins_rsi(ins_ls, time = 14):
         price_today = float(ins_ls[-i])
         
         if price_before > price_today:
-            up.append(price_before - price_today)
+            down.append(price_before - price_today)
         elif price_before < price_today:
-            down.append(price_today - price_before)
+            up.append(price_today - price_before)
     up_ave = sum(up)/time
     down_ave = sum(down)/time
 
