@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
+from matplotlib.widgets import Slider
 import pandas as pd
+import numpy as np
 import rsi
 import sys
 
@@ -14,32 +16,103 @@ def loadPrices(fn):
 # stock_indx as the instrument of interest
 # list of metrics as a list of functions which return an array of metric data from a column
 # list of corresponding metric names, for legend
-def plot_instance(prcHist, stock_indx, list_of_metrics=None, metric_names=None):
-    
-    df = pd.DataFrame(prcHist[stock_indx])
+# supports list of lists for plotting multiple metrics on one plot (e.g SMA10, SMA25, SMA50)
+def plot_instance(prcHist, list_of_metrics=None, metric_names=None):
 
-    plot_a = plt.figure(1)
+    # setup initial plot, plot stock 0
+    if list_of_metrics:
+        fig, axs = plt.subplots(len(list_of_metrics) + 1, sharex=True)
+    else:
+        fig, axs = plt.subplots()
     
-    plt.plot(prcHist[stock_indx], label="price")
+    l, = axs[0].plot(prcHist[0])
+    axs[0].set_title(f"Stock: 0")
+    axs[0].set_ylabel("$ price")
+    axs[len(list_of_metrics)].set_xlabel("date")
     
-    # compute metrics and store in the df
-    for i, metric in enumerate(list_of_metrics):
-        metric_name = metric_names[i]
+    def initialise_aux_plots(stock_indx):    
+        ls = []
         
-        # compute metric on data
-        metric_data = metric(df[0])
+        for i, metric in enumerate(list_of_metrics):
+            metric_name = metric_names[i]
+            
+            # check if metric is many metrics on one plot
+            if isinstance(metric, list):
+                ls0 = []
+                for j, metric0 in enumerate(metric):
+                    metric_name0 = metric_name[j]
+                    
+                    metric_data = metric0(prcHist[stock_indx])
+                    
+                    ls0.append((axs[i + 1].plot(metric_data, "--", label=metric_name0))[0])
 
-        # store in df
-        df[metric_name] = metric_data
+                axs[i + 1].legend()
+                ls.append(ls0)
+            
+            else:
+                # compute metric on data
+                metric_data = metric(prcHist[stock_indx])
+
+                # plot
+                ls.append((axs[i + 1].plot(metric_data, "--", label=metric_name))[0])
+                axs[i + 1].legend()
         
-        # plot
-        plt.plot(df[metric_name], "--", label=metric_name)
+        return ls
     
-    plt.legend()
-    plt.xlabel("date")
-    plt.ylabel("$ price")
-    plt.title(f"Stock: {stock_indx}")
-    #plt.show()
+    ls = initialise_aux_plots(0)
+    
+    def update_aux_plots(stock_indx, ls):
+        for i, metric in enumerate(list_of_metrics):
+            metric_name = metric_names[i]
+            
+            if isinstance(metric, list):
+                for j, metric0 in enumerate(metric):
+                    metric_data = metric0(prcHist[stock_indx])
+                    
+                    ls[i][j].set_ydata(metric_data)
+
+                axs[i + 1].relim()
+                axs[i + 1].autoscale_view()
+                axs[i + 1].legend()
+            
+            else:
+                # compute metric on data
+                metric_data = metric(prcHist[stock_indx])
+
+                # plot
+                ls[i].set_ydata(metric_data)
+                axs[i + 1].relim()
+                axs[i + 1].autoscale_view()
+                axs[i + 1].legend()
+    
+    # positioning of the bar/margins
+    plt.subplots_adjust(bottom=0.25)
+
+    slider_bkd_color = 'red'
+    ax_stock_indx = plt.axes([0.25, 0.1, 0.65, 0.03], facecolor=slider_bkd_color)
+
+    # create slider
+    slider_index = Slider(
+        ax_stock_indx, "Stock Index", 0, 100,
+        valinit=0, valstep=1
+    )
+
+    # routine to be called on updates to index of interest
+    def update(val):
+        stock_indx = int(slider_index.val)
+        l.set_ydata(prcHist[stock_indx])
+        axs[0].relim()
+        axs[0].autoscale_view()
+        axs[0].set_title(f"Stock: {stock_indx}")
+        
+        update_aux_plots(stock_indx, ls)
+        
+        fig.canvas.draw_idle()
+
+    slider_index.on_changed(update)
+
+    plt.show()
+
 
 # takes prcHist as numpy array
 # stock_indx as the instrument of interest
@@ -63,19 +136,33 @@ def plot_rsi_instance(prcHist, stock_indx):
     plt.ylabel("RSI")
     plt.title(f"RSI of Stock: {stock_indx}")
 
-    
-
-
 
 # example with SMA function
 def SMA(data, window):
     return pd.DataFrame(data)[0].rolling(window=window).mean()
 
 
+# example showing what the code can do
 if __name__ == '__main__':
     nInst, nt = 0, 0
     prcHist = loadPrices("prices250.txt")
+    
+    # metrics: functions that accept a vector/array/list of data for one stock and
+    #   return a corresponding vector of the calculated metric for that instrument
+    SMA10 = lambda x : SMA(x, 10)
+    SMA30 = lambda x : SMA(x, 30)
+    SMA50 = lambda x : SMA(x, 50) 
+    # these lambdas are just wrapper functions that pass a constant window argument
+    
+    # # one metric example
+    # plot_instance(prcHist, 15, [SMA10], ["SMA10"])
+    # plt.show()
+    # 
+    # # multiple metrics on one plot example
+    # plot_instance(prcHist, 15, [[SMA10, SMA30]], [["SMA10", "SMA30"]])
+    # plt.show()
 
-    plot_instance(prcHist, 15, [lambda x : SMA(x, 10)], ["SMA10"])
-    plot_rsi_instance(prcHist, 15)
+    # multiple metrics, multiple plots
+    plot_instance(prcHist, [[SMA10, SMA30], SMA50], [["SMA10", "SMA30"], "SMA50"])
     plt.show()
+    
