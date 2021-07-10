@@ -136,22 +136,27 @@ def plot_rsi_instance(prcHist, stock_indx):
     plt.ylabel("RSI")
     plt.title(f"RSI of Stock: {stock_indx}")
 
-
 # example with SMA function
 def SMA(data, window):
     return pd.DataFrame(data)[0].rolling(window=window).mean()
 
+def ATR(data, window):
+    TR = []
+    for i in range (1, len(data)):
+        tr = abs(data[i] - data[i-1])/data[i] * 100
+        TR.append(tr)
+    return pd.DataFrame(TR)[0].rolling(window=window).mean()
 
 # example showing what the code can do
 if __name__ == '__main__':
     nInst, nt = 0, 0
     prcHist = loadPrices("prices250.txt")
-    
     # metrics: functions that accept a vector/array/list of data for one stock and
     #   return a corresponding vector of the calculated metric for that instrument
     SMA10 = lambda x : SMA(x, 10)
     SMA30 = lambda x : SMA(x, 30)
     SMA50 = lambda x : SMA(x, 50) 
+    ATR14 = lambda x: ATR(x, 14)
     # these lambdas are just wrapper functions that pass a constant window argument
     
     # # one metric example
@@ -163,6 +168,5 @@ if __name__ == '__main__':
     # plt.show()
 
     # multiple metrics, multiple plots
-    plot_instance(prcHist, [[SMA10, SMA30], SMA50], [["SMA10", "SMA30"], "SMA50"])
+    plot_instance(prcHist, [[SMA10, SMA30], SMA50, ATR14], [["SMA10", "SMA30"], "SMA50", "ATR"])
     plt.show()
-    
