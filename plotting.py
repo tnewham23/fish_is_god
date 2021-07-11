@@ -12,79 +12,104 @@ def loadPrices(fn):
     nt, nInst = df.values.shape
     return (df.values).T
 
-# takes prcHist as a numpy array
-# stock_indx as the instrument of interest
-# list of metrics as a list of functions which return an array of metric data from a column
-# list of corresponding metric names, for legend
-# supports list of lists for plotting multiple metrics on one plot (e.g SMA10, SMA25, SMA50)
-def plot_instance(prcHist, list_of_metrics=None, metric_names=None):
+
+def plot_instance(prcHist, list_of_metrics=None):
+    """Plots (dynamically) stock prices against given metrics
+
+    Parameters
+    ----------
+    prcHist : numpy array or list
+        Stock data.
+    list_of_metrics : list of dictionaries detailing the metrics passed
+        Defaults to None, in which case no metrics are plotted.
+        Dictionaries have 3 parameters:
+            metric: the function (or list of functions) to be plotting
+            metric name: a string (or list thereof) detailing the name(s) of the metric(s)
+            bounds (optional): any horizontal lines to be drawn on the plot
+
+    Returns
+    -------
+    None
+    """
+
 
     # setup initial plot, plot stock 0
     if list_of_metrics:
         fig, axs = plt.subplots(len(list_of_metrics) + 1, sharex=True)
     else:
-        fig, axs = plt.subplots()
+        # bit of a bad style trick to avoid changing the axs[0] below
+        fig, ax = plt.subplots()
+        axs = [ax]
     
     l, = axs[0].plot(prcHist[0])
     axs[0].set_title(f"Stock: 0")
     axs[0].set_ylabel("$ price")
-    axs[len(list_of_metrics)].set_xlabel("date")
+    if list_of_metrics:
+        axs[len(list_of_metrics)].set_xlabel("date")
+    else:
+        axs[0].set_xlabel("date")
+
     
     def initialise_aux_plots(stock_indx):    
-        ls = []
+        list_list_curves = []
         
-        for i, metric in enumerate(list_of_metrics):
-            metric_name = metric_names[i]
-            
-            # check if metric is many metrics on one plot
-            if isinstance(metric, list):
-                ls0 = []
-                for j, metric0 in enumerate(metric):
-                    metric_name0 = metric_name[j]
-                    
-                    metric_data = metric0(prcHist[stock_indx])
-                    
-                    ls0.append((axs[i + 1].plot(metric_data, "--", label=metric_name0))[0])
+        if not list_of_metrics:
+            return list_list_curves
 
-                axs[i + 1].legend()
-                ls.append(ls0)
+        for i, metric_info in enumerate(list_of_metrics):
             
+            metric_name = metric_info['name']
+            
+            # draw horizontal lines
+            if 'bounds' in metric_info.keys():
+                for line in metric_info['bounds']:
+                    axs[i + 1].axhline(y=line, color = 'r', linestyle = '-')
+
+            # handle one metric being passed
+            if not isinstance(metric_info['metric'], list):
+                metrics = [metric_info['metric']]
+                metric_name = [metric_name]
             else:
-                # compute metric on data
-                metric_data = metric(prcHist[stock_indx])
+                metrics = metric_info['metric']
 
-                # plot
-                ls.append((axs[i + 1].plot(metric_data, "--", label=metric_name))[0])
+            curves = []
+            for j, metric0 in enumerate(metrics):
+                metric_name0 = metric_name[j]
+
+                metric_data = metric0(prcHist[stock_indx])
+
+                curves.append((axs[i + 1].plot(metric_data, "--", label=metric_name0))[0])
+
                 axs[i + 1].legend()
+            list_list_curves.append(curves)
         
-        return ls
+        return list_list_curves
     
-    ls = initialise_aux_plots(0)
-    
-    def update_aux_plots(stock_indx, ls):
-        for i, metric in enumerate(list_of_metrics):
-            metric_name = metric_names[i]
+    def update_aux_plots(stock_indx, list_list_curves):
+        if not list_of_metrics:
+            return
+        
+        for i, metric_info in enumerate(list_of_metrics):
             
-            if isinstance(metric, list):
-                for j, metric0 in enumerate(metric):
-                    metric_data = metric0(prcHist[stock_indx])
-                    
-                    ls[i][j].set_ydata(metric_data)
+            metric_name = metric_info['name']
 
-                axs[i + 1].relim()
-                axs[i + 1].autoscale_view()
-                axs[i + 1].legend()
-            
+            # handle one metric being passed
+            if not isinstance(metric_info['metric'], list):
+                metrics = [metric_info['metric']]
+                metric_name = [metric_name]
             else:
-                # compute metric on data
-                metric_data = metric(prcHist[stock_indx])
+                metrics = metric_info['metric']
 
-                # plot
-                ls[i].set_ydata(metric_data)
-                axs[i + 1].relim()
-                axs[i + 1].autoscale_view()
-                axs[i + 1].legend()
-    
+            for j, metric0 in enumerate(metrics):
+                metric_data = metric0(prcHist[stock_indx])
+                list_list_curves[i][j].set_ydata(metric_data)
+                
+            axs[i + 1].relim()
+            axs[i + 1].autoscale_view()
+            axs[i + 1].legend()
+
+    list_list_curves = initialise_aux_plots(0)
+
     # positioning of the bar/margins
     plt.subplots_adjust(bottom=0.25)
 
@@ -105,7 +130,7 @@ def plot_instance(prcHist, list_of_metrics=None, metric_names=None):
         axs[0].autoscale_view()
         axs[0].set_title(f"Stock: {stock_indx}")
         
-        update_aux_plots(stock_indx, ls)
+        update_aux_plots(stock_indx, list_list_curves)
         
         fig.canvas.draw_idle()
 
@@ -136,12 +161,29 @@ def plot_rsi_instance(prcHist, stock_indx):
     plt.ylabel("RSI")
     plt.title(f"RSI of Stock: {stock_indx}")
 
+# example of vectorising RSI function (taken directly from above)
+def vector_rsi_instance(data):
+    x = []
+    # generate rsi values for each day
+    for i in range(0, 250):
+        if i == 0:
+            x.append(50)
+            continue
+        prcHistSoFar = data[:i]
+        x.append(rsi.ins_rsi(prcHistSoFar, 14))
+    
+    return x
+
 # example with SMA function
 def SMA(data, window):
     return pd.DataFrame(data)[0].rolling(window=window).mean()
 
+# def SMA_optimized(data, window):
+    
+
 def ATR(data, window):
     TR = []
+    # TODO: need an initial value here, otherwise off by 1 as mentioned
     for i in range (1, len(data)):
         tr = abs(data[i] - data[i-1])/data[i] * 100
         TR.append(tr)
@@ -159,14 +201,30 @@ if __name__ == '__main__':
     ATR14 = lambda x: ATR(x, 14)
     # these lambdas are just wrapper functions that pass a constant window argument
     
-    # # one metric example
-    # plot_instance(prcHist, 15, [SMA10], ["SMA10"])
-    # plt.show()
-    # 
-    # # multiple metrics on one plot example
-    # plot_instance(prcHist, 15, [[SMA10, SMA30]], [["SMA10", "SMA30"]])
-    # plt.show()
+    # example: no metrics 
+    # plot_instance(prcHist)
 
-    # multiple metrics, multiple plots
-    plot_instance(prcHist, [[SMA10, SMA30], SMA50, ATR14], [["SMA10", "SMA30"], "SMA50", "ATR"])
+    # example: one metric 
+    # plot_instance(prcHist, [{'metric' : SMA10, 'name' : 'SMA10'}])
+
+    # example: multiple metrics on one plot 
+    # plot_instance(prcHist, [{'metric' : [SMA10, SMA30], 'name' : ["SMA10", "SMA30"]}])
+
+    # example: multiple metrics, multiple plots
+    # plot_instance(prcHist, [
+    #     {'metric' : [SMA10, SMA30], 'name' : ["SMA10", "SMA30"]}, 
+    #     {'metric' : ATR14, 'name' : "ATR14"} # behaviour identical to passing [ATR14] and ["ATR14"]
+    # ])
+    
+    # example: metric and bounding lines
+    # plot_instance(prcHist, [
+    #     {'metric' : ATR14, 'bounds':[0.1,0.7], 'name' : "ATR14"}
+    # ])
+
+    # example: plot of multiple(ish) metrics with bounds
+    plot_instance(prcHist, [
+        {'metric' : [SMA10, SMA30], 'name' : ["SMA10", "SMA30"]},
+        {'metric' : vector_rsi_instance, 'bounds':[30, 70], 'name' : "RSI"}
+    ])
+    
     plt.show()
