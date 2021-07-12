@@ -187,6 +187,8 @@ def ATR(data, window):
     for i in range (1, len(data)):
         tr = abs(data[i] - data[i-1])/data[i] * 100
         TR.append(tr)
+        if i == 1:
+            TR.append(tr)
     return pd.DataFrame(TR)[0].rolling(window=window).mean()
 
 # example showing what the code can do
