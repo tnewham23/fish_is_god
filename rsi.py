@@ -56,6 +56,27 @@ def rsi(prcSoFar, time = 14):
         rsi_ls.append(ins_rsi(ins_ls, time))
     return rsi_ls
 
+# Standardise rsi of given instrument
+def std_rsi(ins_ls, time = 14):
+    rsi = ins_rsi(ins_ls, time)
+
+    # Centre at 0
+    rsi -= 50 
+    # Scale to 1
+    rsi = rsi / 50
+
+    return rsi
+
+def is_threshold_rsi(ins_ls, time = 14):
+    rsi = ins_rsi(ins_ls, time)
+
+    if rsi >= 0.7:
+        return 1
+    if rsi <= 0.4:
+        return -1
+    return 0
+
+
 
 # ------------- below was used for testing --------------- #
 def loadPrices(fn):
@@ -68,10 +89,6 @@ if __name__ == '__main__':
     nInst, nt = 0, 0
     prcAll = loadPrices("prices250.txt")
 
-
-    x = []
-    for t in range(0,100):
-        x.append([])
 
     a = []
 
