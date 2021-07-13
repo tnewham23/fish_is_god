@@ -83,6 +83,35 @@ def EMA(ins_ls, time, prev_ema):
 def SMA(ins_ls, time):
     return mean(ins_ls[-time:])
 
+def res_ave(ins_ls, time, sma_len = 20):
+    sma_ls = []
+    time = time
+    for i in range(time):  
+        if len(ins_ls[:-(i+1)]) < 1:
+            time -= 1
+            continue
+        sma_ls.append(SMA(ins_ls[:-(i+1)], sma_len))
+    total = 0
+    for i in range(time):
+        total += abs(sma_ls[-i] - ins_ls[-i])
+    return total/time
+
+def std_res_ave(ins_ls, time, sma_len = 20):
+    return res_ave(ins_ls, time, sma_len = 20)/mean(ins_ls)
+
+def res_dif(ins_ls, time, sma, sma_len = 20):
+    return abs(sma - ins_ls[-1]) - (std_res_ave(ins_ls, time, sma_len = 20))
+
+def SMA_factor(ins_ls, mean_len):
+    mean_num = mean_len
+    if len(ins_ls) < mean_num:
+        mean_num = len(ins_ls)
+    mn = mean(ins_ls[-mean_num:])
+    sma10 = SMA(ins_ls, 12)
+    sma30 = SMA(ins_ls, 30)
+    return (1 - (abs(sma10 - sma30)/mn), sma10 - sma30)
+
+
 # ------------- below was used for testing --------------- #
 def loadPrices(fn):
     global nt, nInst
@@ -94,6 +123,8 @@ if __name__ == '__main__':
     nInst, nt = 0, 0
     prcAll = loadPrices("prices250.txt")
 
+    for index, ins_ls in enumerate(prcAll):
+        print(f"Instrument {index} residual dif = {res_dif(ins_ls, 100, SMA(ins_ls, 20), sma_len = 20)}")
 
     a = []
 
@@ -103,7 +134,6 @@ if __name__ == '__main__':
         rsi_t = rsi(prcHistSoFar)
         a.append(rsi_t[1])
 
-    print(a)
 
     plt.plot(a)
     plt.axhline(y=30, color = 'r', linestyle = '-')
