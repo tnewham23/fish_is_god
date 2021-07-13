@@ -150,7 +150,7 @@ def plot_rsi_instance(prcHist, stock_indx):
             x.append(50)
             continue
         prcHistSoFar = prcHist[:,:i]
-        x.append(rsi.ins_rsi(prcHistSoFar[stock_indx], 14))
+        x.append(rsi.ins_rsi(prcHistSoFar[stock_indx], 17))
     
     plt.plot(x, label='RSI')
     plt.axhline(y=30, color = 'r', linestyle = '-')
@@ -170,7 +170,7 @@ def vector_rsi_instance(data):
             x.append(50)
             continue
         prcHistSoFar = data[:i]
-        x.append(rsi.ins_rsi(prcHistSoFar, 14))
+        x.append(rsi.ins_rsi(prcHistSoFar, 20))
     
     return x
 
@@ -195,7 +195,9 @@ if __name__ == '__main__':
     prcHist = loadPrices("prices250.txt")
     # metrics: functions that accept a vector/array/list of data for one stock and
     #   return a corresponding vector of the calculated metric for that instrument
+    SMA8 = lambda x : SMA(x, 8)
     SMA10 = lambda x : SMA(x, 10)
+    SMA24 = lambda x : SMA(x, 24)
     SMA30 = lambda x : SMA(x, 30)
     SMA50 = lambda x : SMA(x, 50) 
     ATR14 = lambda x: ATR(x, 14)
