@@ -11,11 +11,17 @@ nInst=100
 currentPos = np.zeros(nInst)
 # Checks correlation between instruments based on first 250 days of analysis
 corrMatrix = r.corr_mat("./prices250.txt")
+counter = 0
 
 def getMyPosition (prcSoFar):
     global currentPos
     global corrMatrix
+    global counter
     (nins,nt) = prcSoFar.shape
+    counter += 1
+    if counter % 50 == 0:
+        for index in range(50):
+            currentPos[index] *= 0.5
 
     # increase position by 10000/(price*50) when price decreases, decrease position by 10000/(price*50) when price increases
     for index, ins_ls in enumerate(prcSoFar):
@@ -30,20 +36,25 @@ def getMyPosition (prcSoFar):
             prev_sma30 = rsi.SMA(ins_ls[:-1], 30)
 
             # If moving average in upward increasing trend, then buy 
-            if (sma10 - sma30) > 0 and abs(sma10 - sma30) > abs(prev_sma10 - prev_sma30):
+            if (sma10 - sma30) > 0 and abs(sma10 - sma30) > abs(prev_sma10 - prev_sma30) and abs(sma10 - sma30) > sma10*0.02:
                 # Reduce number usually volatile stock in opposite direction (since high rsi)
                 if index > 50:
                     currentPos[index] -= (5000/(ins_ls[-1]))
                     continue
+                # Optimisation to encourage a backwards swing in the case of a large change in price
+                if abs(sma10 - sma30) > sma10*0.04:
+                    currentPos[index] += 5000/(ins_ls[-1])
                 # Use correlation matrix to apply trend from this instrument to other similar instruments
                 # Note correlation with itself is equal to 1
                 for i in range(50):
                     currentPos[i] += (5000/(ins_ls[-1])) * (corrMatrix[index][i]**1)*abs(corrMatrix[index][i]**1)
-            # Simialr to above but in opposite direction
-            elif (sma10 - sma30) < 0 and abs(sma10 - sma30) > abs(prev_sma10 - prev_sma30):
+            # Similar to above but in opposite direction
+            elif (sma10 - sma30) < 0 and abs(sma10 - sma30) > abs(prev_sma10 - prev_sma30) and abs(sma10 - sma30) > sma10*0.02:
                 if index > 50:
                     currentPos[index] -= -5000/(ins_ls[-1])
                     continue
+                if abs(sma10 - sma30) > sma10*0.04:
+                    currentPos[index] += -5000/(ins_ls[-1])
                 for i in range(50):
                     currentPos[i] += (-5000/(ins_ls[-1])) * (corrMatrix[index][i]**1)*abs(corrMatrix[index][i]**1)
         else:
