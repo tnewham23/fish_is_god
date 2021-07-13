@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from statistics import mean
 import matplotlib.pyplot as plt
 
 # Sum a list
@@ -15,7 +16,7 @@ def sum(ls):
 def ins_rsi(ins_ls, time = 14):
     up = []
     down = []
-    if len(ins_ls) < 15:
+    if len(ins_ls) < time + 1:
         time = len(ins_ls) - 1
         if time == 0:
             return 50
@@ -70,13 +71,17 @@ def std_rsi(ins_ls, time = 14):
 def is_threshold_rsi(ins_ls, time = 14):
     rsi = ins_rsi(ins_ls, time)
 
-    if rsi >= 0.7:
+    if rsi >= 70:
         return 1
-    if rsi <= 0.4:
+    if rsi <= 40:
         return -1
     return 0
 
+def EMA(ins_ls, time, prev_ema):
+    return ins_ls[-1]*(2/(1+time)) + prev_ema*(1-(2/(1+time)))
 
+def SMA(ins_ls, time):
+    return mean(ins_ls[-time:])
 
 # ------------- below was used for testing --------------- #
 def loadPrices(fn):

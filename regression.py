@@ -9,7 +9,7 @@ import trading_functions
 
 
 pricesFile="./prices250.txt"
-prcAll = loadPrices(pricesFile)
+#prcAll = loadPrices(pricesFile)
 
 def corr_mat(price_file):
     df=pd.read_csv(pricesFile, sep='\s+', header=None, index_col=None)
@@ -42,3 +42,5 @@ pos_cor = cor_ins(corrMatrix, 0.9)
 print(f"Instruments with positive correlation above 0.9 = {pos_cor}")
 neg_cor = cor_ins(corrMatrix, -0.9, False)
 print(f"Instruments with negative correlation below 0.9 = {neg_cor}")
+
+print(corrMatrix)
