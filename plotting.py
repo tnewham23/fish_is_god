@@ -24,8 +24,12 @@ def plot_instance(prcHist, list_of_metrics=None):
         Defaults to None, in which case no metrics are plotted.
         Dictionaries have 3 parameters:
             metric: the function (or list of functions) to be plotting
-            metric name: a string (or list thereof) detailing the name(s) of the metric(s)
-            bounds (optional): any horizontal lines to be drawn on the plot
+            metric name: a string (or list thereof) detailing 
+                the name(s) of the metric(s)
+            bounds (optional): any horizontal lines to be drawn on 
+                the plot
+            styles (optional): must be a list of styles for each 
+                metric added to the plot
 
     Returns
     -------
@@ -76,9 +80,15 @@ def plot_instance(prcHist, list_of_metrics=None):
             for j, metric0 in enumerate(metrics):
                 metric_name0 = metric_name[j]
 
-                metric_data = metric0(prcHist[stock_indx])
+                if callable(metric0):
+                    metric_data = metric0(prcHist[stock_indx])
+                else:
+                    metric_data = metric0[stock_indx]
 
-                curves.append((axs[i + 1].plot(metric_data, "--", label=metric_name0))[0])
+                style = "--"
+                if 'styles' in metric_info.keys():
+                    style = metric_info['styles'][j]
+                curves.append((axs[i + 1].plot(metric_data, style, label=metric_name0))[0])
 
                 axs[i + 1].legend()
             list_list_curves.append(curves)
@@ -101,7 +111,10 @@ def plot_instance(prcHist, list_of_metrics=None):
                 metrics = metric_info['metric']
 
             for j, metric0 in enumerate(metrics):
-                metric_data = metric0(prcHist[stock_indx])
+                if callable(metric0):
+                    metric_data = metric0(prcHist[stock_indx])
+                else:
+                    metric_data = metric0[stock_indx]
                 list_list_curves[i][j].set_ydata(metric_data)
                 
             axs[i + 1].relim()
@@ -187,6 +200,8 @@ def ATR(data, window):
     for i in range (1, len(data)):
         tr = abs(data[i] - data[i-1])/data[i] * 100
         TR.append(tr)
+        if i == 1:
+            TR.append(tr)
     return pd.DataFrame(TR)[0].rolling(window=window).mean()
 
 # example showing what the code can do
