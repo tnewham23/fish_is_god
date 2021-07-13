@@ -21,7 +21,6 @@ def algo_performance(prcHist, numDays):
     totDVolume = 0
     value = 0
     todayPLL = []
-    # (_,nt) = prcHist.shape
 
     for t in range(nt + 1 - numDays,nt + 1):
         prcHistSoFar = prcHist[:,:t]
@@ -46,23 +45,8 @@ def algo_performance(prcHist, numDays):
         # print(deltaPos)
         cash[t] = cash[t - 1] - (curPrices * deltaPos + comm)
         
-        
-        # posValue = curPos.dot(curPrices)
-        # todayPL = cash + posValue - value
-        # todayPLL.append(todayPL)
-        # value = cash + posValue
-        # ret = 0.0
-        # if (totDVolume > 0):
-            # ret = value / totDVolume
-        # print ("Day %d value: %.2lf todayPL: $%.2lf $-traded: %.0lf return: %.5lf frac0: %.4lf frac1: %.4lf" % (t,value, todayPL, totDVolume, ret, frac0, frac1))
-    # pll = np.array(todayPLL)
-    # (plmu,plstd) = (np.mean(pll), np.std(pll))
-    # annSharpe = 0.0
-    # if (plstd > 0):
-        # annSharpe = 16 * plmu / plstd
     return (cash, position)
 
-# implement algo performance on particular stock
 
 if __name__ == '__main__':
     commRate = 0.0050 # Commission rate.
@@ -72,6 +56,19 @@ if __name__ == '__main__':
 
     cash, position = algo_performance(prcHist, 50)
     
-    # print(position[-1])
+    value = cash[-250:] + position[-250:] * prcHist.T
+    
+    SMA10 = lambda x : plotting.SMA(x, 10)
+    SMA30 = lambda x : plotting.SMA(x, 30)
+
+    plotting.plot_instance(prcHist, [
+        {'metric' : [SMA10, SMA30], 'name' : ["SMA10", "SMA30"]},
+        {'metric' : plotting.vector_rsi_instance, 'bounds':[30, 70], 'name' : "RSI"},
+        {'metric' : position.T, 'name' : "position", 'styles' : ['b']},
+        {'metric' : value.T, 'name' : "profit/loss", 'styles' : ['b']}
+    ])
+    
+    
     # final_PL = cash[-1] + position[-1] * prcHist[:,-1]
     # print(sum(final_PL))
+    # agrees with eval.py, so hopefully the code works
