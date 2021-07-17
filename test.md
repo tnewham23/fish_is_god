@@ -1,2 +1,0 @@
-# G'day all
-*Test*
