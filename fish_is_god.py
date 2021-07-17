@@ -18,6 +18,7 @@ def getMyPosition (prcSoFar):
     global corrMatrix
     global counter
     (nins,nt) = prcSoFar.shape
+    # Reset size to try and reduce huge positions which restrict backswing
     counter += 1
     if counter % 50 == 0:
         for index in range(50):
@@ -36,27 +37,41 @@ def getMyPosition (prcSoFar):
             prev_sma30 = rsi.SMA(ins_ls[:-1], 30)
 
             # If moving average in upward increasing trend, then buy 
-            if (sma10 - sma30) > 0 and abs(sma10 - sma30) > abs(prev_sma10 - prev_sma30) and abs(sma10 - sma30) > sma10*0.02:
+            if (sma10 - sma30) > 0 and abs(sma10 - sma30) > sma10*0.02:
                 # Reduce number usually volatile stock in opposite direction (since high rsi)
                 if index > 50:
                     currentPos[index] -= (5000/(ins_ls[-1]))
                     continue
-                # Optimisation to encourage a backwards swing in the case of a large change in price
-                if abs(sma10 - sma30) > sma10*0.04:
-                    currentPos[index] += 5000/(ins_ls[-1])
-                # Use correlation matrix to apply trend from this instrument to other similar instruments
-                # Note correlation with itself is equal to 1
-                for i in range(50):
-                    currentPos[i] += (5000/(ins_ls[-1])) * (corrMatrix[index][i]**1)*abs(corrMatrix[index][i]**1)
+                if abs(sma10 - sma30) > abs(prev_sma10 - prev_sma30):
+                    # Optimisation to encourage a backwards swing in the case of a large change in price
+                    if abs(sma10 - sma30) > sma10*0.04:
+                        currentPos[index] += 5000/(ins_ls[-1])
+
+                    # Use correlation matrix to apply trend from this instrument to other similar instruments
+                    # Note correlation with itself is equal to 1
+                    for i in range(50):
+                        currentPos[i] += (5000/(ins_ls[-1])) * (corrMatrix[index][i]**1)*abs(corrMatrix[index][i]**1)
+                elif abs(sma10 - sma30) < abs(prev_sma10 - prev_sma30):
+                    for i in range(50):
+                        currentPos[i] -= (1000/(ins_ls[-1])) * (corrMatrix[index][i]**1)*abs(corrMatrix[index][i]**1)
             # Similar to above but in opposite direction
-            elif (sma10 - sma30) < 0 and abs(sma10 - sma30) > abs(prev_sma10 - prev_sma30) and abs(sma10 - sma30) > sma10*0.02:
+            elif (sma10 - sma30) < 0 and abs(sma10 - sma30) > sma10*0.02:
                 if index > 50:
                     currentPos[index] -= -5000/(ins_ls[-1])
                     continue
-                if abs(sma10 - sma30) > sma10*0.04:
-                    currentPos[index] += -5000/(ins_ls[-1])
-                for i in range(50):
-                    currentPos[i] += (-5000/(ins_ls[-1])) * (corrMatrix[index][i]**1)*abs(corrMatrix[index][i]**1)
+
+                if abs(sma10 - sma30) > abs(prev_sma10 - prev_sma30):
+
+                    if abs(sma10 - sma30) > sma10*0.04:
+                        currentPos[index] += -5000/(ins_ls[-1])
+
+                    for i in range(50):
+                        currentPos[i] += (-5000/(ins_ls[-1])) * (corrMatrix[index][i]**1)*abs(corrMatrix[index][i]**1) 
+
+                elif abs(sma10 - sma30) < abs(prev_sma10 - prev_sma30):
+                    for i in range(50):
+                        currentPos[i] -= (-1000/(ins_ls[-1])) * (corrMatrix[index][i]**1)*abs(corrMatrix[index][i]**1) 
+
         else:
             # Instrument is volatile, use day to day trading assuming the opposite move move is likely to happen
             # If current price is larger than previous price, short instrument
